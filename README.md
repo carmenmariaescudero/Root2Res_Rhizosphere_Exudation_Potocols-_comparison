@@ -1,6 +1,7 @@
 # Root2Res_Rhizosphere_Exudation_Potocols-_comparison
 
-Evaluation of combined root exudates and rhizosphere microbiome sampling approaches for high-throughput investigation of plant-soil-microbes interaction. (In preparation)
+Evaluation of combined root exudates and rhizosphere microbiome sampling approaches for high-throughput investigation of plant-soil-microbes interaction. (In preparation).
+
 The objective of this study was to develop, test and critically evaluate different sampling approaches that allow the collection of root exudates and the rhizosphere microbiota analysis from the same, soil-grown plant.
 
 
