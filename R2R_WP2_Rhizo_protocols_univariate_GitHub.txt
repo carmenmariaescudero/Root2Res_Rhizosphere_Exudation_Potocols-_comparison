@@ -1,0 +1,294 @@
+########################################################################################
+## Root2res WP2 Rhizosphere protocols comparison: Univariate data analysis: Biomass, Root morphology, Exudation rates 
+############################################################################################
+
+# Clean-up the memory and start a new session
+#############################################################
+
+rm(list=ls())
+dev.off()
+
+###packages required
+
+library (ggplot2)
+library(plyr)
+library(MASS)
+library(ggfortify)
+library(ggthemes)
+library(colorspace)
+library(grDevices)
+library(dunn.test)
+
+
+##working directory
+
+
+###################################################################
+#Plotting Biomass data
+######################################################################
+
+#Input file biomass
+###############################
+JH33_pilot <- read.delim("", sep = "\t") 
+
+#Subset the plant data
+
+JH33_pilot_rhizo_r <- subset (JH33_pilot, Protocol=="EO_WET"|Protocol== "EO_DRY+WET"|Protocol=="DB_ALL")
+JH33_pilot_rhizo <- subset (JH33_pilot, Description=='Barke')
+
+##Figure 2A
+#################Dry weight shoots
+
+JH33_pilot_rhizo$Protocol <-  ordered(JH33_pilot_rhizo$Protocol, levels=c("EO_WET", "EO_DRY+WET","DB_ALL", "DB_CLASSIC"))
+
+#Plotting
+p<-ggplot(JH33_pilot_rhizo, aes(x=Protocol, y=ShootDW, fill=Protocol))+ 
+  geom_boxplot(position=position_dodge(0.8))+ 
+  geom_jitter(position=position_dodge(0.8))+ 
+  ylim(0,1)+
+  theme(axis.text.x = element_text(size=14, angle=45, hjust=1))
+
+p+scale_fill_manual(values=c("#D55E00", "#E69F00","#56B4E9","#0072B2"))+  geom_jitter( size=5,shape=21, position=position_jitterdodge(dodge.width = 0.75, jitter.width = 0),alpha=2)
+
+##Stats
+shapiro.test(JH33_pilot$ShootDW)
+
+
+Shoot_aov <- with (JH33_pilot_rhizo, aov(ShootDW~Protocol))
+summary (Shoot_aov)
+
+
+##Figure 2B
+#################Dry weight roots
+
+JH33_pilot_rhizo_r$Protocol <-  ordered(JH33_pilot_rhizo_r$Protocol, levels=c( "EO_WET", "EO_DRY+WET","DB_ALL"))
+
+#Plotting
+p<-ggplot(JH33_pilot_rhizo_r, aes(x=Protocol, y=RootDW, fill=Protocol))+ 
+  geom_boxplot(position=position_dodge(0.8))+ 
+  geom_jitter(position=position_dodge(0.8))+ 
+  ylim(0,0.5)+
+  theme(axis.text.x = element_text(size=14, angle=45, hjust=1))
+
+p+scale_fill_manual(values=c("#D55E00", "#E69F00","#56B4E9"))+  geom_jitter( size=5,shape=21, position=position_jitterdodge(dodge.width = 0.75, jitter.width = 0),alpha=2)
+
+##Stats
+shapiro.test(JH33_pilot_rhizo_r$RootDW)
+l
+Root_aov <- with (JH33_pilot_rhizo_r, aov(RootDW~Protocol))
+summary (Root_aov)
+
+TukeyHSD(Root_aov)
+
+##No featuring
+##Root2Shoot ratio###########################################################
+JH33_pilot_rhizo_r$Protocol <-  ordered(JH33_pilot_rhizo_r$Protocol, levels=c("EO_WET", "EO_DRY+WET","DB_ALL"))
+#Plotting
+p<-ggplot(JH33_pilot_rhizo_r , aes(x=Protocol, y=R2S_ratio, fill=Protocol))+ 
+  geom_boxplot(position=position_dodge(0.8))+ 
+  geom_jitter(position=position_dodge(0.8))+ 
+  ylim(0,1)+
+  theme(axis.text.x = element_text(size=14, angle=45, hjust=1))
+
+p+scale_fill_manual(values=c("#D55E00", "#E69F00","#56B4E9"))+  geom_jitter( size=5,shape=21, position=position_jitterdodge(dodge.width = 0.75, jitter.width = 0),alpha=2)
+
+#stats 
+shapiro.test(JH33_pilot_rhizo_r$R2S_ratio)
+
+
+R2S_ratio_aov <- with (JH33_pilot_rhizo_r, aov(R2S_ratio~Protocol))
+summary (R2S_ratio_aov)
+
+
+TukeyHSD(R2S_ratio_aov)
+
+
+##End
+
+
+###########################################
+##STable1
+##########################################
+##Winrhizo
+#########################################
+library(pastecs)
+
+JH33_winrhizo <- read.delim("Winrhizo_0123norm2.txt", sep = "\t") 
+
+##Calculating the values mean and SE for the table
+####################################################
+
+JH33_winrhizo$Protocol <-  ordered(JH33_winrhizo$Protocol, levels=c(  "EO_WET", "EO_DRY+WET","DB_ALL"))
+
+by(JH33_winrhizo, JH33_winrhizo$Protocol, summary)
+
+by(JH33_winrhizo, JH33_winrhizo$Protocol, stat.desc)
+
+###################################################################
+#plotting PCA 
+#No featuring
+######################################################################
+pca.fit <- prcomp(x = JH33_winrhizo[, -c(1:9)], scale. = TRUE)# 1:3 remove nice first column as contains names ;scaled pca
+pca.summary <- summary(pca.fit)
+ls(pca.summary)# Lists the objects produced by summary
+autoplot(pca.fit)
+
+#reverse the signs
+pca.fit $rotation <- -1*pca.fit $rotation
+
+#display principal components
+pca.fit $rotation
+
+
+p=autoplot(pca.fit, data = JH33_winrhizo, colour = "Protocol", size=8,
+           loadings = TRUE, loadings.colour = 'black',
+           loadings.label = TRUE, loadings.label.size = 4)
+p = p + scale_colour_manual(values = c("#56B4E9", "#E69F00","#D55E00"))
+p + ggtitle("Biplot winrhizo Protocols")
+
+
+
+##Statistical test per winrhizo variable
+##################################################
+
+#Plotting Length
+p<-ggplot(JH33_winrhizo, aes(x=Protocol, y=Length_n, fill=Protocol))+ 
+  geom_boxplot(position=position_dodge(0.8))+ 
+  geom_jitter(position=position_dodge(0.8))+ 
+  ylim(0,12000)+
+  theme(axis.text.x = element_text(size=14, angle=45, hjust=1))
+
+p+scale_fill_manual(values=c("#D55E00", "#E69F00","#56B4E9"))+  geom_jitter( size=5,shape=21, position=position_jitterdodge(dodge.width = 0.75, jitter.width = 0),alpha=2)
+
+##Stats
+shapiro.test(JH33_winrhizo$Length_n)
+
+
+Length_n_aov <- with (JH33_winrhizo, aov(Length_n~Protocol))
+summary (Length_n_aov)
+
+TukeyHSD(Length_n_aov)
+
+#Plotting SRL
+p<-ggplot(JH33_winrhizo, aes(x=Protocol, y=SRL_n, fill=Protocol))+ 
+  geom_boxplot(position=position_dodge(0.8))+ 
+  geom_jitter(position=position_dodge(0.8))+ 
+  ylim(0,12000)+
+  theme(axis.text.x = element_text(size=14, angle=45, hjust=1))
+
+p+scale_fill_manual(values=c("#D55E00", "#E69F00","#56B4E9"))+  geom_jitter( size=5,shape=21, position=position_jitterdodge(dodge.width = 0.75, jitter.width = 0),alpha=2)
+
+##Stats
+shapiro.test(JH33_winrhizo$SRL_n)
+
+
+SRL_n_aov <- with (JH33_winrhizo, aov(SRL_n~Protocol))
+summary (SRL_n_aov)
+
+
+#Plotting ProjArea(cm2)
+p<-ggplot(JH33_winrhizo, aes(x=Protocol, y=ProjArea_n, fill=Protocol))+ 
+  geom_boxplot(position=position_dodge(0.8))+ 
+  geom_jitter(position=position_dodge(0.8))+ 
+  ylim(0,200)+
+  theme(axis.text.x = element_text(size=14, angle=45, hjust=1))
+
+p+scale_fill_manual(values=c("#D55E00", "#E69F00","#56B4E9"))+  geom_jitter( size=5,shape=21, position=position_jitterdodge(dodge.width = 0.75, jitter.width = 0),alpha=2)
+
+##Stats
+shapiro.test(JH33_winrhizo$ProjArea_n)
+
+
+ProjArea_n_aov <- with (JH33_winrhizo, aov(ProjArea_n~Protocol))
+summary (ProjArea_n_aov)
+
+TukeyHSD(ProjArea_n_aov)
+
+#Plotting SurfArea(cm2)
+p<-ggplot(JH33_winrhizo, aes(x=Protocol, y=SA_n, fill=Protocol))+ 
+  geom_boxplot(position=position_dodge(0.8))+ 
+  geom_jitter(position=position_dodge(0.8))+ 
+  ylim(0,700)+
+  theme(axis.text.x = element_text(size=14, angle=45, hjust=1))
+
+p+scale_fill_manual(values=c("#D55E00", "#E69F00","#56B4E9"))+  geom_jitter( size=5,shape=21, position=position_jitterdodge(dodge.width = 0.75, jitter.width = 0),alpha=2)
+
+##Stats
+shapiro.test(JH33_winrhizo$SA_n)
+
+SA_n_aov <- with (JH33_winrhizo, aov(SA_n~Protocol))
+summary (SA_n_aov)
+
+TukeyHSD(SA_n_aov)
+
+
+#Plotting AvgDiam(mm)
+p<-ggplot(JH33_winrhizo, aes(x=Protocol, y=AvDiam, fill=Protocol))+ 
+  geom_boxplot(position=position_dodge(0.8))+ 
+  geom_jitter(position=position_dodge(0.8))+ 
+  ylim(0,0.5)+
+  theme(axis.text.x = element_text(size=14, angle=45, hjust=1))
+
+p+scale_fill_manual(values=c("#D55E00", "#E69F00","#56B4E9"))+  geom_jitter( size=5,shape=21, position=position_jitterdodge(dodge.width = 0.75, jitter.width = 0),alpha=2)
+
+##Stats
+shapiro.test(JH33_winrhizo$AvDiam)
+
+
+AvDiam_aov <- with (JH33_winrhizo, aov(AvDiam~Protocol))
+summary (AvDiam_aov)
+
+TukeyHSD(AvDiam_aov)
+
+
+################################################################
+##Figure 2 C, D
+###############################################################
+##Root exudates
+###############################################################
+JH33_exudates <- read.delim("WP2.2_PILOT-BAR_23_CE_BOKU_1_0524.txt", sep = "\t") 
+
+JH33_exudates$Protocol <-  ordered(JH33_exudates$Protocol, levels=c("BLANK","SOILB" , "EO_WET", "EO_DRY+WET","DB_ALL"))
+
+#Plotting C exudation rate/RSA (µmol C /cm-2) 
+#################################################
+p<-ggplot(JH33_exudates, aes(x=Protocol, y=C_RSA, fill=Protocol))+ 
+  geom_boxplot(position=position_dodge(0.8))+ 
+  geom_jitter(position=position_dodge(0.8))+ 
+  ylim(0,2)+
+  theme(axis.text.x = element_text(size=14, angle=45, hjust=1))
+
+p+scale_fill_manual(values=c("#D55E00", "#E69F00","#56B4E9"))+  geom_jitter( size=5,shape=21, position=position_jitterdodge(dodge.width = 0.75, jitter.width = 0),alpha=2)
+
+##Stats
+shapiro.test(JH33_exudates$C_RSA)
+
+
+C_RSA_aov <- with (JH33_exudates, aov(C_RSA~Protocol))
+summary (C_RSA_aov)
+
+
+#Plotting N exudation rate/RSA (µmol N /cm-2) 
+#################################################
+
+p<-ggplot(JH33_exudates, aes(x=Protocol, y=N_RSA, fill=Protocol))+ 
+  geom_boxplot(position=position_dodge(0.8))+ 
+  geom_jitter(position=position_dodge(0.8))+
+  ylim(0,0.5)+
+  theme(axis.text.x = element_text(size=14, angle=45, hjust=1))
+
+p+scale_fill_manual(values=c( "#D55E00", "#E69F00","#56B4E9"))+  geom_jitter( size=5,shape=21, position=position_jitterdodge(dodge.width = 0.75, jitter.width = 0),alpha=2)
+
+##Stats
+shapiro.test(JH33_exudates$N_RSA)
+
+
+N_RSA_aov <- with (JH33_exudates, aov(N_RSA~Protocol))
+summary (N_RSA_aov)
+
+
+TukeyHSD(N_RSA_aov)
+
+
+
+##End
